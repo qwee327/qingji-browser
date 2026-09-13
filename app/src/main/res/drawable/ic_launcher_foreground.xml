@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 羽毛造型：寓意"轻" -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M81,29C57,31 37,49 33,77C59,73 77,55 81,29Z" />
+    <path
+        android:strokeColor="#1B5FD9"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M73,37L41,69" />
+</vector>
