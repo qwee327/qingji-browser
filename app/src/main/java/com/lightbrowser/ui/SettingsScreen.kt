@@ -209,7 +209,7 @@ fun SettingsScreen(navController: NavController) {
             SettingsSectionTitle("关于")
             SettingsClickItem(
                 title = "轻级浏览器",
-                subtitle = "版本 1.0.2 · 基于 Android System WebView · 最低支持 Android 10",
+                subtitle = "版本 1.0.3 · 基于 Android System WebView · 最低支持 Android 10",
                 onClick = { }
             )
             Spacer(Modifier.height(24.dp))

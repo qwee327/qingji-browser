@@ -4,6 +4,13 @@ import android.content.Intent
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -175,10 +182,16 @@ fun BrowserScreen(navController: NavController) {
         }
     }
 
-    val topBarColor = if (tab?.isIncognito == true)
-        MaterialTheme.colorScheme.surfaceContainerHighest
-    else
-        MaterialTheme.colorScheme.surfaceContainer
+    // 编辑态下顶栏与页面同色，避免出现突兀的方形色块；颜色切换带过渡动画
+    val topBarColor by animateColorAsState(
+        targetValue = when {
+            editing -> MaterialTheme.colorScheme.surface
+            tab?.isIncognito == true -> MaterialTheme.colorScheme.surfaceContainerHighest
+            else -> MaterialTheme.colorScheme.surfaceContainer
+        },
+        animationSpec = tween(200),
+        label = "topBarColor"
+    )
 
     Column(modifier = Modifier.fillMaxSize().background(topBarColor)) {
         Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
@@ -230,56 +243,63 @@ fun BrowserScreen(navController: NavController) {
                         }
                         Spacer(Modifier.width(8.dp))
                     }
-                    if (editing) {
-                        BasicTextField(
-                            value = omniboxValue,
-                            onValueChange = { omniboxValue = it },
-                            modifier = Modifier.weight(1f).focusRequester(focusRequester),
-                            singleLine = true,
-                            textStyle = TextStyle(
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 16.sp
-                            ),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Uri,
-                                imeAction = ImeAction.Search
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onSearch = { submitInput(omniboxValue.text) }
-                            ),
-                            decorationBox = { innerTextField ->
-                                Box {
-                                    if (omniboxValue.text.isEmpty()) {
-                                        Text(
-                                            "搜索或输入网址",
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            fontSize = 16.sp
-                                        )
+                    Crossfade(
+                        targetState = editing,
+                        animationSpec = tween(150),
+                        modifier = Modifier.weight(1f),
+                        label = "omnibox"
+                    ) { isEditing ->
+                        if (isEditing) {
+                            BasicTextField(
+                                value = omniboxValue,
+                                onValueChange = { omniboxValue = it },
+                                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 16.sp
+                                ),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Uri,
+                                    imeAction = ImeAction.Search
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onSearch = { submitInput(omniboxValue.text) }
+                                ),
+                                decorationBox = { innerTextField ->
+                                    Box {
+                                        if (omniboxValue.text.isEmpty()) {
+                                            Text(
+                                                "搜索或输入网址",
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontSize = 16.sp
+                                            )
+                                        }
+                                        innerTextField()
                                     }
-                                    innerTextField()
                                 }
-                            }
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier.weight(1f).fillMaxHeight()
-                                .clickable { startEditing() },
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Text(
-                                text = when {
-                                    tab == null || tab.isHome -> "搜索或输入网址"
-                                    tab.title.isNotBlank() -> tab.title
-                                    else -> currentUrl
-                                },
-                                color = if (tab == null || tab.isHome)
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                else MaterialTheme.colorScheme.onSurface,
-                                fontSize = 16.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
                             )
+                        } else {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().fillMaxHeight()
+                                    .clickable { startEditing() },
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Text(
+                                    text = when {
+                                        tab == null || tab.isHome -> "搜索或输入网址"
+                                        tab.title.isNotBlank() -> tab.title
+                                        else -> currentUrl
+                                    },
+                                    color = if (tab == null || tab.isHome)
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    else MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 16.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
                     when {
@@ -496,8 +516,10 @@ fun BrowserScreen(navController: NavController) {
                     )
                 }
             }
-            if (currentTab != null && editing && suggestions.isNotEmpty()) {
-                SuggestionsPanel(
+            // 编辑态下始终覆盖建议面板（无建议时显示空白页底），带淡入+展开过渡动画
+            if (currentTab != null) {
+                SuggestionOverlay(
+                    visible = editing,
                     suggestions = suggestions,
                     onClick = { suggestion ->
                         if (suggestion.url != null) {
@@ -653,6 +675,39 @@ fun BrowserScreen(navController: NavController) {
     }
 }
 
+/**
+ * 编辑态建议覆盖层：独立 Composable 以避开 ColumnScope/BoxScope
+ * 隐式接收者导致的 AnimatedVisibility 重载歧义。
+ */
+@Composable
+private fun SuggestionOverlay(
+    visible: Boolean,
+    suggestions: List<Suggestion>,
+    onClick: (Suggestion) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AnimatedVisibility(
+        visible = visible,
+        modifier = modifier,
+        enter = fadeIn(tween(150)) + expandVertically(tween(200)),
+        exit = fadeOut(tween(120)),
+        label = "suggestions"
+    ) {
+        if (suggestions.isNotEmpty()) {
+            SuggestionsPanel(
+                suggestions = suggestions,
+                onClick = onClick,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.surface
+            ) {}
+        }
+    }
+}
+
 @Composable
 private fun SuggestionsPanel(
     suggestions: List<Suggestion>,
@@ -661,7 +716,8 @@ private fun SuggestionsPanel(
 ) {
     Surface(modifier = modifier, color = MaterialTheme.colorScheme.surface) {
         LazyColumn {
-            items(suggestions, key = { it.type.name + it.text }) { suggestion ->
+            // 不使用内容 key：建议项文本可能重复，内容 key 冲突会导致闪退
+            items(suggestions) { suggestion ->
                 Row(
                     modifier = Modifier.fillMaxWidth()
                         .clickable { onClick(suggestion) }
