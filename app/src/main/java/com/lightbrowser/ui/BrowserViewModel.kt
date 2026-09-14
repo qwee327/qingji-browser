@@ -89,8 +89,8 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
                     Suggestion(it.title.ifBlank { it.url }, it.url, SuggestionType.HISTORY)
                 } + db.bookmarkDao().search(query).map {
                     Suggestion(it.title.ifBlank { it.url }, it.url, SuggestionType.BOOKMARK)
-                    // 按展示文本去重：历史里可能有多条同标题/同网址记录，
-                    // 重复项会导致建议列表 LazyColumn key 冲突闪退
+                // 按展示文本去重：历史里可能有多条同标题/同网址记录，
+                // 重复项会导致建议列表 LazyColumn key 冲突闪退
                 }).distinctBy { it.text }.take(5)
             }
             _suggestions.value = local
