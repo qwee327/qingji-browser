@@ -13,8 +13,8 @@ android {
         applicationId = "com.lightbrowser"
         minSdk = 29
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.0.3"
+        versionCode = 5
+        versionName = "1.0.4"
     }
 
     buildTypes {
