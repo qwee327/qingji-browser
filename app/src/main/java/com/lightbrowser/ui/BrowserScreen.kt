@@ -444,6 +444,21 @@ fun BrowserScreen(navController: NavController) {
             }
         }
 
+        // ---------- 顶部多标签栏 ----------
+        TabStrip(
+            tabs = tabManager.tabs,
+            currentTabId = tabManager.currentTabId,
+            onSelect = { id ->
+                stopEditing()
+                tabManager.selectTab(id)
+            },
+            onClose = { id -> tabManager.closeTab(id) },
+            onAdd = {
+                stopEditing()
+                tabManager.createTab()
+            }
+        )
+
         // ---------- 加载进度条 ----------
         if (tab?.isLoading == true) {
             LinearProgressIndicator(

@@ -5,7 +5,7 @@
 - **应用名称**：轻级浏览器
 - **包名**：`com.lightbrowser`
 - **minSdk 29（Android 10）/ targetSdk 36（Android 16）/ compileSdk 36**
-- **当前版本**：v1.0.3（versionCode 4）
+- **当前版本**：v1.0.4（versionCode 5）
 
 ## 下载
 
@@ -15,7 +15,7 @@
 
 | 模块 | 功能 |
 | --- | --- |
-| 多标签 | 网格标签切换器、新建/关闭/全部关闭、会话持久化（重启恢复）、`target=_blank` 自动开新标签 |
+| 多标签 | 顶部标签栏（点击切换/单标签关闭/末尾新建/当前标签高亮自动滚动）、网格标签切换器、会话持久化（重启恢复）、`target=_blank` 自动开新标签 |
 | 地址栏 | Chrome 风格圆角地址栏，URL/搜索词智能识别，加载进度条，停止/刷新 |
 | 搜索联想 | 百度/必应在线联想 + 本地历史/书签联想（可切换搜索引擎：百度/必应/谷歌/DuckDuckGo） |
 | 无痕模式 | 无痕标签不记历史、禁用缓存，标签切换器深色卡片标识 |
@@ -73,7 +73,8 @@ app/src/main/java/com/lightbrowser/
 │   ├── Entities.kt / Daos.kt / AppDatabase.kt   # Room：书签/历史/打开的标签
 │   └── SettingsRepository.kt                    # DataStore 设置
 └── ui/
-    ├── BrowserScreen.kt       # 浏览器主界面（地址栏/内容区/查找栏/菜单）
+    ├── BrowserScreen.kt       # 浏览器主界面（地址栏/顶部标签栏/内容区/查找栏/菜单）
+    ├── TabStrip.kt            # 顶部多标签栏（横向滚动标签列表）
     ├── TabSwitcherScreen.kt   # 标签页网格切换器
     ├── HomeContent.kt         # 新标签页主页
     ├── BookmarksScreen.kt / HistoryScreen.kt / DownloadsScreen.kt / SettingsScreen.kt
@@ -82,6 +83,9 @@ app/src/main/java/com/lightbrowser/
 ```
 
 ## 版本记录
+
+### v1.0.4（2026-09-14）
+- 新增：顶部多标签页管理——地址栏下方常驻横向标签栏，点击切换标签、单标签关闭、末尾一键新建；当前标签高亮并与网页内容区同色，切换时自动滚动到可见位置；无痕标签带专属标识；关闭最后一个标签时自动新建主页标签。
 
 ### v1.0.3（2026-09-14）
 - 修复：地址栏输入时联想列表导致应用闪退。原因：历史记录中存在多条相同标题/网址的记录时，联想结果出现重复文本，建议列表 LazyColumn 的内容 key 冲突抛出异常。修复：联想结果按展示文本去重，建议列表不再使用内容 key。
