@@ -131,6 +131,8 @@ class TabManager(private val appContext: Context) {
             currentTabId = tabs.getOrNull(index)?.id ?: tabs.lastOrNull()?.id
         }
         persistTabs()
+        // 顶部标签栏允许关闭最后一个标签，此时自动新建主页标签，避免停留在空白启动页
+        if (tabs.isEmpty()) createTab()
     }
 
     fun closeAllTabs() {
