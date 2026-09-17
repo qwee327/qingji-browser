@@ -98,9 +98,9 @@ private fun TabStripItem(
 ) {
     Surface(
         shape = RoundedCornerShape(10.dp),
-        // 选中标签与网页内容区同色，视觉上与页面连为一体
+        // 选中标签使用主题色容器高亮，未选中保持透明
         color = when {
-            selected -> MaterialTheme.colorScheme.surface
+            selected -> MaterialTheme.colorScheme.primaryContainer
             tab.isIncognito -> MaterialTheme.colorScheme.surfaceContainerHighest
             else -> Color.Transparent
         },
@@ -128,14 +128,14 @@ private fun TabStripItem(
                 )
                 else -> Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = colorfulFor(tab.host.ifBlank { tab.id }),
                     modifier = Modifier.size(14.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             tab.displayTitle.take(1),
                             fontSize = 8.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = Color.White
                         )
                     }
                 }
@@ -146,7 +146,7 @@ private fun TabStripItem(
                 fontSize = 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                color = if (selected) MaterialTheme.colorScheme.onSurface
+                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.widthIn(max = 96.dp)
             )

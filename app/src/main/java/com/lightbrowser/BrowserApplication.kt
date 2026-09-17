@@ -4,6 +4,7 @@ import android.app.Application
 import android.webkit.WebView
 import com.lightbrowser.browser.AdBlocker
 import com.lightbrowser.browser.TabManager
+import com.lightbrowser.browser.Userscripts
 import com.lightbrowser.data.AppDatabase
 import com.lightbrowser.data.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
@@ -34,6 +35,12 @@ class BrowserApplication : Application() {
         appScope.launch {
             database.siteRuleDao().observeAll().collect { rules ->
                 AdBlocker.updateSiteExceptions(rules.associate { it.host to it.level })
+            }
+        }
+        // 扩展脚本变化时，实时同步到脚本引擎
+        appScope.launch {
+            database.extensionDao().observeAll().collect { extensions ->
+                Userscripts.update(extensions)
             }
         }
         if (BuildConfig.DEBUG) {

@@ -1,6 +1,7 @@
 package com.lightbrowser.ui
 
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +30,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.lightbrowser.R
@@ -48,8 +52,23 @@ private val defaultShortcuts = listOf(
     Shortcut("维基百科", "https://zh.wikipedia.org")
 )
 
+/** 多彩调色板：速拨瓷贴/标签首字母底色，按站点 host 哈希取色，稳定不变 */
+val colorfulPalette = listOf(
+    Color(0xFFEF5350), Color(0xFFEC407A), Color(0xFFAB47BC), Color(0xFF7E57C2),
+    Color(0xFF5C6BC0), Color(0xFF42A5F5), Color(0xFF26A69A), Color(0xFF66BB6A),
+    Color(0xFF9CCC65), Color(0xFFFFA726)
+)
+
+fun colorfulFor(key: String): Color =
+    colorfulPalette[(key.hashCode() and Int.MAX_VALUE) % colorfulPalette.size]
+
+private val rainbowColors = listOf(
+    Color(0xFFEF5350), Color(0xFFFB8C00), Color(0xFFFDD835),
+    Color(0xFF43A047), Color(0xFF1E88E5), Color(0xFF8E24AA)
+)
+
 /**
- * 新标签页（主页）：Logo + 搜索框 + 常用网站速拨。
+ * 新标签页（主页）：彩色渐变 Logo + 渐变描边搜索框 + 多彩常用网站速拨。
  * 常用网站优先取自真实访问历史，不足时用预设站点补齐。
  */
 @Composable
@@ -87,24 +106,62 @@ fun HomeContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(top = 96.dp, bottom = 40.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_launcher_foreground),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(72.dp)
-                    )
-                    Spacer(Modifier.height(12.dp))
+                    // 彩色渐变圆环 + 中心 Logo
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(96.dp)
+                            .background(
+                                Brush.sweepGradient(rainbowColors + rainbowColors.first()),
+                                CircleShape
+                            )
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier.size(84.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_launcher_foreground),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(56.dp)
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    // 渐变文字标题
                     Text(
                         "轻级浏览器",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            brush = Brush.linearGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.tertiary,
+                                    MaterialTheme.colorScheme.primary
+                                )
+                            ),
+                            fontWeight = FontWeight.Bold
+                        )
                     )
                 }
             }
             item(span = { GridItemSpan(maxLineSpan) }) {
+                // 渐变描边搜索框
                 Surface(
                     shape = RoundedCornerShape(50),
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.5.dp,
+                        Brush.horizontalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.tertiary
+                            )
+                        )
+                    ),
                     modifier = Modifier
                         .padding(horizontal = 24.dp)
                         .fillMaxWidth()
@@ -118,7 +175,7 @@ fun HomeContent(
                         Icon(
                             Icons.Default.Search,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(Modifier.width(12.dp))
                         Text(
@@ -137,22 +194,25 @@ fun HomeContent(
                 )
             }
             items(shortcuts, key = { it.url }) { shortcut ->
+                val host = runCatching { Uri.parse(shortcut.url).host }.getOrNull() ?: shortcut.name
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .clickable { onOpenUrl(shortcut.url) }
                         .padding(vertical = 12.dp)
                 ) {
+                    // 多彩圆角瓷贴：按站点取稳定彩色，白色首字母
                     Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shape = RoundedCornerShape(18.dp),
+                        color = colorfulFor(host),
                         modifier = Modifier.size(56.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 shortcut.name.take(1),
                                 style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
