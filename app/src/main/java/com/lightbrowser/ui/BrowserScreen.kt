@@ -35,10 +35,12 @@ import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -116,6 +118,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.lightbrowser.BrowserApplication
 import com.lightbrowser.browser.BrowserTab
+import com.lightbrowser.browser.CrashLogger
 import com.lightbrowser.browser.DownloadHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -142,6 +145,12 @@ fun BrowserScreen(navController: NavController) {
     val currentUrl = tab?.url.orEmpty()
     val bookmarkedFlow = remember(currentUrl) { viewModel.isBookmarked(currentUrl) }
     val bookmarked by bookmarkedFlow.collectAsState(initial = false)
+
+    // 上次崩溃日志：存在则启动后弹窗展示，便于反馈排查
+    var crashLog by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        crashLog = CrashLogger.read(context)
+    }
 
     fun startEditing() {
         omniboxValue = TextFieldValue(currentUrl, selection = TextRange(0, currentUrl.length))
@@ -609,6 +618,41 @@ fun BrowserScreen(navController: NavController) {
         } else {
             Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
         }
+    }
+
+    // ---------- 上次崩溃日志提示 ----------
+    crashLog?.let { log ->
+        AlertDialog(
+            onDismissRequest = {
+                CrashLogger.clear(context)
+                crashLog = null
+            },
+            title = { Text("检测到上次异常退出") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text("应用上次运行时发生了错误。如问题持续出现，请复制以下信息反馈：")
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        log,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    clipboard.setText(AnnotatedString(log))
+                    CrashLogger.clear(context)
+                    crashLog = null
+                }) { Text("复制并关闭") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    CrashLogger.clear(context)
+                    crashLog = null
+                }) { Text("关闭") }
+            }
+        )
     }
 
     // ---------- SSL 证书错误对话框 ----------

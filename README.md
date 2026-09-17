@@ -5,7 +5,7 @@
 - **应用名称**：轻级浏览器
 - **包名**：`com.lightbrowser`
 - **minSdk 29（Android 10）/ targetSdk 36（Android 16）/ compileSdk 36**
-- **当前版本**：v2.0.0（versionCode 7）
+- **当前版本**：v2.0.1（versionCode 8）
 
 ## 下载
 
@@ -28,7 +28,7 @@
 | 安全隐私 | 跟踪器/广告拦截（三级默认等级、按站点例外、跟踪器/广告规则库管理、自定义域名规则、严格阻止整页拦截）、HTTPS 锁标识、SSL 证书错误确认弹窗、第三方 Cookie 开关、退出时清数据 |
 | 扩展程序 | 油猴（Tampermonkey）风格 .user.js 扩展脚本：粘贴代码/URL 在线安装、`@match` 站点匹配、`document-start`/`document-end` 注入时机、启用/停用/删除 |
 | 个性化 | 多彩主题预设（经典蓝/樱桃红/珊瑚橙/柠檬黄/翡翠绿/葡萄紫）、Material You 动态取色、彩色渐变主页与速拨瓷贴 |
-| 其它 | 分享、复制链接、`intent://` 外链跳转 App、JS alert/confirm/prompt 对话框、渲染进程崩溃自动恢复 |
+| 其它 | 分享、复制链接、`intent://` 外链跳转 App、JS alert/confirm/prompt 对话框、渲染进程崩溃自动恢复、崩溃自诊断日志 |
 
 ## Android 版本适配
 
@@ -61,7 +61,7 @@ Kotlin 2.1 · Jetpack Compose（Material 3, BOM 2025.06）· Navigation Compose 
 
 ```
 app/src/main/java/com/lightbrowser/
-├── BrowserApplication.kt      # 应用入口：拦截规则预载、规则数据库观察者、WebView 调试开关
+├── BrowserApplication.kt      # 应用入口：崩溃捕获、拦截规则预载、数据库观察者（全局异常兜底）
 ├── MainActivity.kt            # 单 Activity：导航、权限桥接、文件选择、视频全屏
 ├── browser/
 │   ├── TabManager.kt          # 多标签管理 + WebView 配置/生命周期 + WebViewClient/ChromeClient
@@ -70,6 +70,7 @@ app/src/main/java/com/lightbrowser/
 │   ├── SearchEngines.kt       # 搜索引擎定义（百度/必应/谷歌/DuckDuckGo）
 │   ├── SuggestionFetcher.kt   # 在线搜索联想
 │   ├── Userscripts.kt         # 扩展脚本引擎（元数据解析/match 匹配/注入执行）
+│   ├── CrashLogger.kt         # 崩溃自诊断（异常写日志，下次启动弹窗可复制）
 │   ├── DownloadHelper.kt      # 系统下载接管
 │   └── WebCallbacks.kt        # 需要 Activity 能力的回调接口
 ├── data/
@@ -88,6 +89,10 @@ app/src/main/java/com/lightbrowser/
 ```
 
 ## 版本记录
+
+### v2.0.1（2026-09-17）
+- 修复：打开网页可能闪退的稳定性隐患——后台数据库观察者/持久化协程增加全局异常兜底（异常仅记录日志，不再杀进程）；拦截判定与扩展脚本注入增加逐层容错。
+- 新增：崩溃自诊断——未捕获异常自动写入本地日志，下次启动时弹窗展示完整堆栈，可一键复制反馈。
 
 ### v2.0.0（2026-09-17）
 - 新增：扩展程序系统——支持油猴（Tampermonkey）风格 .user.js 扩展脚本，可粘贴代码安装或从 URL 在线安装；支持 `==UserScript==` 元数据（`@name`/`@match`/`@include`/`@exclude`/`@run-at`），按 Chrome match pattern 匹配网址，在页面开始/完成时自动注入执行；扩展可启用/停用/删除，改动实时生效。入口：菜单 → 扩展程序。
