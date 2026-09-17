@@ -40,6 +40,7 @@ import com.lightbrowser.ui.AdBlockSettingsScreen
 import com.lightbrowser.ui.BookmarksScreen
 import com.lightbrowser.ui.BrowserScreen
 import com.lightbrowser.ui.DownloadsScreen
+import com.lightbrowser.ui.ExtensionsScreen
 import com.lightbrowser.ui.HistoryScreen
 import com.lightbrowser.ui.RuleListScreen
 import com.lightbrowser.ui.SettingsScreen
@@ -123,7 +124,8 @@ class MainActivity : ComponentActivity(), WebCallbacks {
 
             LightBrowserTheme(
                 darkTheme = darkTheme,
-                dynamicColor = settings?.dynamicColor ?: true
+                dynamicColor = settings?.dynamicColor ?: true,
+                presetId = settings?.themePreset ?: "classic"
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -145,6 +147,7 @@ class MainActivity : ComponentActivity(), WebCallbacks {
                                 entry.arguments?.getString("type") ?: "tracker"
                             )
                         }
+                        composable("extensions") { ExtensionsScreen(navController) }
                     }
                 }
             }

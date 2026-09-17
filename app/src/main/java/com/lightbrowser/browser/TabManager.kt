@@ -398,6 +398,7 @@ class TabManager(private val appContext: Context) {
             tab.loadError = false
             tab.progress = 10
             url?.let { if (tab.url != it) tab.url = it }
+            injectUserscripts(view, url, Userscripts.RUN_AT_START)
         }
 
         override fun onPageFinished(view: WebView, url: String?) {
@@ -409,6 +410,15 @@ class TabManager(private val appContext: Context) {
             url?.let { tab.url = it }
             persistTabs()
             recordHistory(tab)
+            injectUserscripts(view, url, Userscripts.RUN_AT_END)
+        }
+
+        /** 向页面注入匹配网址的扩展脚本（油猴风格 .user.js） */
+        private fun injectUserscripts(view: WebView, url: String?, runAt: String) {
+            if (url.isNullOrBlank() || !(url.startsWith("http://") || url.startsWith("https://"))) return
+            Userscripts.scriptsFor(url, runAt).forEach { script ->
+                view.evaluateJavascript(Userscripts.wrap(script.code), null)
+            }
         }
 
         override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
