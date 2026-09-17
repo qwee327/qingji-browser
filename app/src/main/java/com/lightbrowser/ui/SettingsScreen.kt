@@ -138,11 +138,10 @@ fun SettingsScreen(navController: NavController) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             SettingsSectionTitle("隐私与安全")
-            SettingsSwitchItem(
-                title = "广告拦截",
-                subtitle = "拦截常见广告与跟踪域名",
-                checked = settings.adBlockEnabled,
-                onCheckedChange = { scope.launch { repo.setAdBlock(it) } }
+            SettingsClickItem(
+                title = "拦截跟踪器和广告",
+                subtitle = adBlockLevelLabel(settings.adBlockLevel),
+                onClick = { navController.navigate("adblock") }
             )
             SettingsSwitchItem(
                 title = "JavaScript",
@@ -209,7 +208,7 @@ fun SettingsScreen(navController: NavController) {
             SettingsSectionTitle("关于")
             SettingsClickItem(
                 title = "轻级浏览器",
-                subtitle = "版本 1.0.4 · 基于 Android System WebView · 最低支持 Android 10",
+                subtitle = "版本 1.1.0 · 基于 Android System WebView · 最低支持 Android 10",
                 onClick = { }
             )
             Spacer(Modifier.height(24.dp))
