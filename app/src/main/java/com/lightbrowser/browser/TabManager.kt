@@ -53,7 +53,12 @@ class TabManager(private val appContext: Context) {
     }
 
     private val db = AppDatabase.getInstance(appContext)
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    // 后台持久化异常只记录日志，绝不允许杀掉应用进程
+    private val scope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Main + kotlinx.coroutines.CoroutineExceptionHandler { _, e ->
+            CrashLogger.record(appContext, e)
+        }
+    )
 
     val tabs = mutableStateListOf<BrowserTab>()
     var currentTabId by mutableStateOf<String?>(null)
@@ -367,11 +372,13 @@ class TabManager(private val appContext: Context) {
             val requestUrl = request.url?.toString()
             if (request.isForMainFrame) {
                 // 严格阻止：主文档地址命中规则时拦截整个网页，展示提示页
-                if (AdBlocker.shouldBlockPage(requestUrl)) return strictBlockedPage()
+                if (runCatching { AdBlocker.shouldBlockPage(requestUrl) }.getOrDefault(false)) {
+                    return strictBlockedPage()
+                }
                 return super.shouldInterceptRequest(view, request)
             }
             val pageUrl = view.url ?: tab.url
-            if (AdBlocker.shouldBlock(requestUrl, pageUrl)) {
+            if (runCatching { AdBlocker.shouldBlock(requestUrl, pageUrl) }.getOrDefault(false)) {
                 return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
             }
             return super.shouldInterceptRequest(view, request)
@@ -413,11 +420,13 @@ class TabManager(private val appContext: Context) {
             injectUserscripts(view, url, Userscripts.RUN_AT_END)
         }
 
-        /** 向页面注入匹配网址的扩展脚本（油猴风格 .user.js） */
+        /** 向页面注入匹配网址的扩展脚本（油猴风格 .user.js）；任何异常都不影响网页加载 */
         private fun injectUserscripts(view: WebView, url: String?, runAt: String) {
             if (url.isNullOrBlank() || !(url.startsWith("http://") || url.startsWith("https://"))) return
-            Userscripts.scriptsFor(url, runAt).forEach { script ->
-                view.evaluateJavascript(Userscripts.wrap(script.code), null)
+            runCatching {
+                Userscripts.scriptsFor(url, runAt).forEach { script ->
+                    view.evaluateJavascript(Userscripts.wrap(script.code), null)
+                }
             }
         }
 
