@@ -5,7 +5,7 @@
 - **应用名称**：轻级浏览器
 - **包名**：`com.lightbrowser`
 - **minSdk 29（Android 10）/ targetSdk 36（Android 16）/ compileSdk 36**
-- **当前版本**：v1.0.4（versionCode 5）
+- **当前版本**：v1.1.0（versionCode 6）
 
 ## 下载
 
@@ -25,7 +25,7 @@
 | 主页 | Logo + 搜索框 + 常用网站速拨（自动取最常访问，不足补预设站点） |
 | 网页能力 | 页内查找（匹配计数/上一个/下一个）、长按链接/图片菜单、桌面版 UA 切换、文字缩放 50%–200% |
 | 媒体与硬件 | 视频全屏（沉浸式）、文件上传、摄像头/麦克风/定位权限桥接 |
-| 安全隐私 | 广告域名拦截（hosts 规则）、HTTPS 锁标识、SSL 证书错误确认弹窗、第三方 Cookie 开关、退出时清数据 |
+| 安全隐私 | 跟踪器/广告拦截（三级默认等级、按站点例外、跟踪器/广告规则库管理、自定义域名规则、严格阻止整页拦截）、HTTPS 锁标识、SSL 证书错误确认弹窗、第三方 Cookie 开关、退出时清数据 |
 | 其它 | 分享、复制链接、`intent://` 外链跳转 App、JS alert/confirm/prompt 对话框、渲染进程崩溃自动恢复 |
 
 ## Android 版本适配
@@ -59,22 +59,23 @@ Kotlin 2.1 · Jetpack Compose（Material 3, BOM 2025.06）· Navigation Compose 
 
 ```
 app/src/main/java/com/lightbrowser/
-├── BrowserApplication.kt      # 应用入口：广告拦截预载、WebView 调试开关
+├── BrowserApplication.kt      # 应用入口：拦截规则预载、规则数据库观察者、WebView 调试开关
 ├── MainActivity.kt            # 单 Activity：导航、权限桥接、文件选择、视频全屏
 ├── browser/
 │   ├── TabManager.kt          # 多标签管理 + WebView 配置/生命周期 + WebViewClient/ChromeClient
 │   ├── BrowserTab.kt          # 标签页状态模型（Compose State）
-│   ├── AdBlocker.kt           # 域名后缀匹配广告拦截
+│   ├── AdBlocker.kt           # 跟踪器/广告拦截引擎（三级等级、站点例外、自定义规则、严格阻止）
 │   ├── SearchEngines.kt       # 搜索引擎定义（百度/必应/谷歌/DuckDuckGo）
 │   ├── SuggestionFetcher.kt   # 在线搜索联想
 │   ├── DownloadHelper.kt      # 系统下载接管
 │   └── WebCallbacks.kt        # 需要 Activity 能力的回调接口
 ├── data/
-│   ├── Entities.kt / Daos.kt / AppDatabase.kt   # Room：书签/历史/打开的标签
+│   ├── Entities.kt / Daos.kt / AppDatabase.kt   # Room：书签/历史/打开的标签/站点例外/自定义规则
 │   └── SettingsRepository.kt                    # DataStore 设置
 └── ui/
     ├── BrowserScreen.kt       # 浏览器主界面（地址栏/顶部标签栏/内容区/查找栏/菜单）
     ├── TabStrip.kt            # 顶部多标签栏（横向滚动标签列表）
+    ├── AdBlockScreens.kt      # 拦截设置（默认等级/站点例外/规则库/严格阻止）
     ├── TabSwitcherScreen.kt   # 标签页网格切换器
     ├── HomeContent.kt         # 新标签页主页
     ├── BookmarksScreen.kt / HistoryScreen.kt / DownloadsScreen.kt / SettingsScreen.kt
@@ -83,6 +84,9 @@ app/src/main/java/com/lightbrowser/
 ```
 
 ## 版本记录
+
+### v1.1.0（2026-09-16）
+- 新增：完整的「拦截跟踪器和广告」设置页——默认拦截等级三档可选（无拦截/拦截跟踪器/拦截跟踪器和广告）；支持按站点设置例外拦截级别；跟踪器与广告规则库分开管理（内置规则可开关、支持添加自定义域名规则）；新增「严格阻止」开关，开启后主文档地址命中规则时直接拦截整个网页并显示提示页。旧版广告拦截开关自动迁移为对应拦截等级。
 
 ### v1.0.4（2026-09-14）
 - 新增：顶部多标签页管理——地址栏下方常驻横向标签栏，点击切换标签、单标签关闭、末尾一键新建；当前标签高亮并与网页内容区同色，切换时自动滚动到可见位置；无痕标签带专属标识；关闭最后一个标签时自动新建主页标签。
@@ -104,4 +108,4 @@ app/src/main/java/com/lightbrowser/
 
 - 无痕标签的 Cookie 与常规标签共享存储（Android WebView 全局 CookieManager 限制），无痕仅保证不写入历史、不持久化缓存；
 - `blob:` / `data:` 协议的网页内下载暂不支持；
-- 广告拦截为内置域名列表，非完整 EasyList 规则。
+- 拦截规则为内置域名列表（跟踪器/广告两类，可开关）加用户自定义规则，非完整 EasyList 规则。

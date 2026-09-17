@@ -36,11 +36,14 @@ import androidx.navigation.compose.rememberNavController
 import com.lightbrowser.browser.WebCallbacks
 import com.lightbrowser.data.BrowserSettings
 import com.lightbrowser.data.ThemeMode
+import com.lightbrowser.ui.AdBlockSettingsScreen
 import com.lightbrowser.ui.BookmarksScreen
 import com.lightbrowser.ui.BrowserScreen
 import com.lightbrowser.ui.DownloadsScreen
 import com.lightbrowser.ui.HistoryScreen
+import com.lightbrowser.ui.RuleListScreen
 import com.lightbrowser.ui.SettingsScreen
+import com.lightbrowser.ui.SiteBlockRulesScreen
 import com.lightbrowser.ui.TabSwitcherScreen
 import com.lightbrowser.ui.theme.LightBrowserTheme
 
@@ -134,6 +137,14 @@ class MainActivity : ComponentActivity(), WebCallbacks {
                         composable("history") { HistoryScreen(navController) }
                         composable("downloads") { DownloadsScreen(navController) }
                         composable("settings") { SettingsScreen(navController) }
+                        composable("adblock") { AdBlockSettingsScreen(navController) }
+                        composable("adblock_sites") { SiteBlockRulesScreen(navController) }
+                        composable("adblock_rules/{type}") { entry ->
+                            RuleListScreen(
+                                navController,
+                                entry.arguments?.getString("type") ?: "tracker"
+                            )
+                        }
                     }
                 }
             }
