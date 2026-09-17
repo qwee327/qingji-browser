@@ -24,6 +24,7 @@ data class BrowserSettings(
     val searchEngineId: String = "baidu",
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = true,
+    val themePreset: String = "classic",
     val adBlockLevel: Int = AdBlockLevel.TRACKERS_AND_ADS,
     val strictBlocking: Boolean = false,
     val builtinTrackerRules: Boolean = true,
@@ -43,6 +44,7 @@ class SettingsRepository(private val context: Context) {
         val SEARCH_ENGINE = stringPreferencesKey("search_engine")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+        val THEME_PRESET = stringPreferencesKey("theme_preset")
         val AD_BLOCK = booleanPreferencesKey("ad_block") // 旧版开关，仅用于迁移
         val AD_BLOCK_LEVEL = intPreferencesKey("ad_block_level")
         val STRICT_BLOCKING = booleanPreferencesKey("strict_blocking")
@@ -63,6 +65,7 @@ class SettingsRepository(private val context: Context) {
             themeMode = runCatching { ThemeMode.valueOf(p[Keys.THEME_MODE] ?: "SYSTEM") }
                 .getOrDefault(ThemeMode.SYSTEM),
             dynamicColor = p[Keys.DYNAMIC_COLOR] ?: true,
+            themePreset = p[Keys.THEME_PRESET] ?: "classic",
             // 旧版布尔开关迁移：旧用户关闭过广告拦截则对应「无拦截」
             adBlockLevel = p[Keys.AD_BLOCK_LEVEL]
                 ?: if (p[Keys.AD_BLOCK] == false) AdBlockLevel.OFF else AdBlockLevel.TRACKERS_AND_ADS,
@@ -87,6 +90,9 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setDynamicColor(v: Boolean) =
         context.settingsDataStore.edit { it[Keys.DYNAMIC_COLOR] = v }
+
+    suspend fun setThemePreset(id: String) =
+        context.settingsDataStore.edit { it[Keys.THEME_PRESET] = id }
 
     suspend fun setAdBlockLevel(level: Int) =
         context.settingsDataStore.edit { it[Keys.AD_BLOCK_LEVEL] = level }

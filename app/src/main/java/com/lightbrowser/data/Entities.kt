@@ -41,3 +41,13 @@ data class CustomBlockRule(
     val isTracker: Boolean,
     val enabled: Boolean = true
 )
+
+/** 浏览器扩展（油猴风格 .user.js 脚本，code 为元数据+脚本文本） */
+@Entity(tableName = "extensions")
+data class BrowserExtension(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val code: String,
+    val enabled: Boolean = true,
+    val createdAt: Long = System.currentTimeMillis()
+)

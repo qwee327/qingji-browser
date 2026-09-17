@@ -87,3 +87,15 @@ interface CustomRuleDao {
     @Delete
     suspend fun delete(rule: CustomBlockRule)
 }
+
+@Dao
+interface ExtensionDao {
+    @Query("SELECT * FROM extensions ORDER BY createdAt ASC")
+    fun observeAll(): Flow<List<BrowserExtension>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(extension: BrowserExtension): Long
+
+    @Delete
+    suspend fun delete(extension: BrowserExtension)
+}
