@@ -13,11 +13,21 @@ private val Context.settingsDataStore by preferencesDataStore(name = "browser_se
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/** 拦截等级：无拦截 / 仅拦截跟踪器 / 拦截跟踪器和广告 */
+object AdBlockLevel {
+    const val OFF = 0
+    const val TRACKERS = 1
+    const val TRACKERS_AND_ADS = 2
+}
+
 data class BrowserSettings(
     val searchEngineId: String = "baidu",
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = true,
-    val adBlockEnabled: Boolean = true,
+    val adBlockLevel: Int = AdBlockLevel.TRACKERS_AND_ADS,
+    val strictBlocking: Boolean = false,
+    val builtinTrackerRules: Boolean = true,
+    val builtinAdRules: Boolean = true,
     val darkWebContentEnabled: Boolean = true,
     val javaScriptEnabled: Boolean = true,
     val blockThirdPartyCookies: Boolean = false,
@@ -33,7 +43,11 @@ class SettingsRepository(private val context: Context) {
         val SEARCH_ENGINE = stringPreferencesKey("search_engine")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
-        val AD_BLOCK = booleanPreferencesKey("ad_block")
+        val AD_BLOCK = booleanPreferencesKey("ad_block") // 旧版开关，仅用于迁移
+        val AD_BLOCK_LEVEL = intPreferencesKey("ad_block_level")
+        val STRICT_BLOCKING = booleanPreferencesKey("strict_blocking")
+        val BUILTIN_TRACKER_RULES = booleanPreferencesKey("builtin_tracker_rules")
+        val BUILTIN_AD_RULES = booleanPreferencesKey("builtin_ad_rules")
         val DARK_WEB = booleanPreferencesKey("dark_web_content")
         val JAVA_SCRIPT = booleanPreferencesKey("java_script")
         val BLOCK_3P_COOKIES = booleanPreferencesKey("block_3p_cookies")
@@ -49,7 +63,12 @@ class SettingsRepository(private val context: Context) {
             themeMode = runCatching { ThemeMode.valueOf(p[Keys.THEME_MODE] ?: "SYSTEM") }
                 .getOrDefault(ThemeMode.SYSTEM),
             dynamicColor = p[Keys.DYNAMIC_COLOR] ?: true,
-            adBlockEnabled = p[Keys.AD_BLOCK] ?: true,
+            // 旧版布尔开关迁移：旧用户关闭过广告拦截则对应「无拦截」
+            adBlockLevel = p[Keys.AD_BLOCK_LEVEL]
+                ?: if (p[Keys.AD_BLOCK] == false) AdBlockLevel.OFF else AdBlockLevel.TRACKERS_AND_ADS,
+            strictBlocking = p[Keys.STRICT_BLOCKING] ?: false,
+            builtinTrackerRules = p[Keys.BUILTIN_TRACKER_RULES] ?: true,
+            builtinAdRules = p[Keys.BUILTIN_AD_RULES] ?: true,
             darkWebContentEnabled = p[Keys.DARK_WEB] ?: true,
             javaScriptEnabled = p[Keys.JAVA_SCRIPT] ?: true,
             blockThirdPartyCookies = p[Keys.BLOCK_3P_COOKIES] ?: false,
@@ -69,8 +88,17 @@ class SettingsRepository(private val context: Context) {
     suspend fun setDynamicColor(v: Boolean) =
         context.settingsDataStore.edit { it[Keys.DYNAMIC_COLOR] = v }
 
-    suspend fun setAdBlock(v: Boolean) =
-        context.settingsDataStore.edit { it[Keys.AD_BLOCK] = v }
+    suspend fun setAdBlockLevel(level: Int) =
+        context.settingsDataStore.edit { it[Keys.AD_BLOCK_LEVEL] = level }
+
+    suspend fun setStrictBlocking(v: Boolean) =
+        context.settingsDataStore.edit { it[Keys.STRICT_BLOCKING] = v }
+
+    suspend fun setBuiltinTrackerRules(v: Boolean) =
+        context.settingsDataStore.edit { it[Keys.BUILTIN_TRACKER_RULES] = v }
+
+    suspend fun setBuiltinAdRules(v: Boolean) =
+        context.settingsDataStore.edit { it[Keys.BUILTIN_AD_RULES] = v }
 
     suspend fun setDarkWebContent(v: Boolean) =
         context.settingsDataStore.edit { it[Keys.DARK_WEB] = v }

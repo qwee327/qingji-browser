@@ -63,3 +63,27 @@ interface TabDao {
     @Query("DELETE FROM open_tabs")
     suspend fun clear()
 }
+
+@Dao
+interface SiteRuleDao {
+    @Query("SELECT * FROM site_block_rules ORDER BY host ASC")
+    fun observeAll(): Flow<List<SiteBlockRule>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(rule: SiteBlockRule)
+
+    @Query("DELETE FROM site_block_rules WHERE host = :host")
+    suspend fun deleteByHost(host: String)
+}
+
+@Dao
+interface CustomRuleDao {
+    @Query("SELECT * FROM custom_block_rules ORDER BY domain ASC")
+    fun observeAll(): Flow<List<CustomBlockRule>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(rule: CustomBlockRule)
+
+    @Delete
+    suspend fun delete(rule: CustomBlockRule)
+}
