@@ -2,7 +2,9 @@ package com.lightbrowser.ui
 
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -47,6 +51,8 @@ import com.lightbrowser.BrowserApplication
 import com.lightbrowser.browser.SearchEngines
 import com.lightbrowser.data.BrowserSettings
 import com.lightbrowser.data.ThemeMode
+import com.lightbrowser.ui.theme.ThemePresets
+import com.lightbrowser.ui.theme.themePresetById
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
@@ -63,6 +69,7 @@ fun SettingsScreen(navController: NavController) {
 
     var showEngineDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showColorDialog by remember { mutableStateOf(false) }
     var showClearHistoryConfirm by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -107,6 +114,13 @@ fun SettingsScreen(navController: NavController) {
                 checked = settings.dynamicColor,
                 enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
                 onCheckedChange = { scope.launch { repo.setDynamicColor(it) } }
+            )
+            SettingsClickItem(
+                title = "主题色彩",
+                subtitle = if (settings.dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                    "动态取色生效中 · ${themePresetById(settings.themePreset).label}"
+                else themePresetById(settings.themePreset).label,
+                onClick = { showColorDialog = true }
             )
             SettingsSwitchItem(
                 title = "网页深色模式",
@@ -208,7 +222,7 @@ fun SettingsScreen(navController: NavController) {
             SettingsSectionTitle("关于")
             SettingsClickItem(
                 title = "轻级浏览器",
-                subtitle = "版本 1.1.0 · 基于 Android System WebView · 最低支持 Android 10",
+                subtitle = "版本 2.0.0 · 基于 Android System WebView · 最低支持 Android 10",
                 onClick = { }
             )
             Spacer(Modifier.height(24.dp))
@@ -281,6 +295,49 @@ fun SettingsScreen(navController: NavController) {
             },
             confirmButton = {
                 TextButton(onClick = { showThemeDialog = false }) { Text("取消") }
+            }
+        )
+    }
+
+    if (showColorDialog) {
+        AlertDialog(
+            onDismissRequest = { showColorDialog = false },
+            title = { Text("主题色彩") },
+            text = {
+                Column {
+                    ThemePresets.forEach { preset ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    scope.launch {
+                                        repo.setThemePreset(preset.id)
+                                        // 选择具体色彩后关闭动态取色，让预设色生效
+                                        repo.setDynamicColor(false)
+                                    }
+                                    showColorDialog = false
+                                }
+                                .padding(vertical = 10.dp)
+                        ) {
+                            RadioButton(
+                                selected = settings.themePreset == preset.id && !settings.dynamicColor,
+                                onClick = null
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .background(preset.primaryLight, CircleShape)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(preset.label)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showColorDialog = false }) { Text("取消") }
             }
         )
     }

@@ -5,7 +5,7 @@
 - **应用名称**：轻级浏览器
 - **包名**：`com.lightbrowser`
 - **minSdk 29（Android 10）/ targetSdk 36（Android 16）/ compileSdk 36**
-- **当前版本**：v1.1.0（versionCode 6）
+- **当前版本**：v2.0.0（versionCode 7）
 
 ## 下载
 
@@ -26,6 +26,8 @@
 | 网页能力 | 页内查找（匹配计数/上一个/下一个）、长按链接/图片菜单、桌面版 UA 切换、文字缩放 50%–200% |
 | 媒体与硬件 | 视频全屏（沉浸式）、文件上传、摄像头/麦克风/定位权限桥接 |
 | 安全隐私 | 跟踪器/广告拦截（三级默认等级、按站点例外、跟踪器/广告规则库管理、自定义域名规则、严格阻止整页拦截）、HTTPS 锁标识、SSL 证书错误确认弹窗、第三方 Cookie 开关、退出时清数据 |
+| 扩展程序 | 油猴（Tampermonkey）风格 .user.js 扩展脚本：粘贴代码/URL 在线安装、`@match` 站点匹配、`document-start`/`document-end` 注入时机、启用/停用/删除 |
+| 个性化 | 多彩主题预设（经典蓝/樱桃红/珊瑚橙/柠檬黄/翡翠绿/葡萄紫）、Material You 动态取色、彩色渐变主页与速拨瓷贴 |
 | 其它 | 分享、复制链接、`intent://` 外链跳转 App、JS alert/confirm/prompt 对话框、渲染进程崩溃自动恢复 |
 
 ## Android 版本适配
@@ -67,15 +69,17 @@ app/src/main/java/com/lightbrowser/
 │   ├── AdBlocker.kt           # 跟踪器/广告拦截引擎（三级等级、站点例外、自定义规则、严格阻止）
 │   ├── SearchEngines.kt       # 搜索引擎定义（百度/必应/谷歌/DuckDuckGo）
 │   ├── SuggestionFetcher.kt   # 在线搜索联想
+│   ├── Userscripts.kt         # 扩展脚本引擎（元数据解析/match 匹配/注入执行）
 │   ├── DownloadHelper.kt      # 系统下载接管
 │   └── WebCallbacks.kt        # 需要 Activity 能力的回调接口
 ├── data/
-│   ├── Entities.kt / Daos.kt / AppDatabase.kt   # Room：书签/历史/打开的标签/站点例外/自定义规则
+│   ├── Entities.kt / Daos.kt / AppDatabase.kt   # Room：书签/历史/打开的标签/站点例外/自定义规则/扩展
 │   └── SettingsRepository.kt                    # DataStore 设置
 └── ui/
     ├── BrowserScreen.kt       # 浏览器主界面（地址栏/顶部标签栏/内容区/查找栏/菜单）
     ├── TabStrip.kt            # 顶部多标签栏（横向滚动标签列表）
     ├── AdBlockScreens.kt      # 拦截设置（默认等级/站点例外/规则库/严格阻止）
+    ├── ExtensionsScreen.kt    # 扩展程序管理（安装/启用/停用/删除 .user.js 脚本）
     ├── TabSwitcherScreen.kt   # 标签页网格切换器
     ├── HomeContent.kt         # 新标签页主页
     ├── BookmarksScreen.kt / HistoryScreen.kt / DownloadsScreen.kt / SettingsScreen.kt
@@ -84,6 +88,10 @@ app/src/main/java/com/lightbrowser/
 ```
 
 ## 版本记录
+
+### v2.0.0（2026-09-17）
+- 新增：扩展程序系统——支持油猴（Tampermonkey）风格 .user.js 扩展脚本，可粘贴代码安装或从 URL 在线安装；支持 `==UserScript==` 元数据（`@name`/`@match`/`@include`/`@exclude`/`@run-at`），按 Chrome match pattern 匹配网址，在页面开始/完成时自动注入执行；扩展可启用/停用/删除，改动实时生效。入口：菜单 → 扩展程序。
+- 重构：界面多彩化——新增六套主题色彩预设（经典蓝/樱桃红/珊瑚橙/柠檬黄/翡翠绿/葡萄紫），与 Material You 动态取色共存；主页改为彩色渐变 Logo 圆环 + 渐变标题 + 渐变描边搜索框 + 多彩速拨瓷贴；顶部标签栏选中态改为主题色高亮、无图标标签按站点显示彩色首字母。
 
 ### v1.1.0（2026-09-16）
 - 新增：完整的「拦截跟踪器和广告」设置页——默认拦截等级三档可选（无拦截/拦截跟踪器/拦截跟踪器和广告）；支持按站点设置例外拦截级别；跟踪器与广告规则库分开管理（内置规则可开关、支持添加自定义域名规则）；新增「严格阻止」开关，开启后主文档地址命中规则时直接拦截整个网页并显示提示页。旧版广告拦截开关自动迁移为对应拦截等级。
@@ -108,4 +116,5 @@ app/src/main/java/com/lightbrowser/
 
 - 无痕标签的 Cookie 与常规标签共享存储（Android WebView 全局 CookieManager 限制），无痕仅保证不写入历史、不持久化缓存；
 - `blob:` / `data:` 协议的网页内下载暂不支持；
-- 拦截规则为内置域名列表（跟踪器/广告两类，可开关）加用户自定义规则，非完整 EasyList 规则。
+- 拦截规则为内置域名列表（跟踪器/广告两类，可开关）加用户自定义规则，非完整 EasyList 规则；
+- 扩展支持油猴风格 .user.js 脚本（内容脚本类能力），不支持桌面版 Chrome CRX 扩展的后台 Service Worker、`chrome.*` API 等机制（Android 系统 WebView 内核限制）。

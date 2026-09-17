@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.FindInPage
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
@@ -391,6 +392,11 @@ fun BrowserScreen(navController: NavController) {
                             text = { Text("下载内容") },
                             leadingIcon = { Icon(Icons.Default.Download, null) },
                             onClick = { menuExpanded = false; navController.navigate("downloads") }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("扩展程序") },
+                            leadingIcon = { Icon(Icons.Default.Extension, null) },
+                            onClick = { menuExpanded = false; navController.navigate("extensions") }
                         )
                         HorizontalDivider()
                         DropdownMenuItem(
