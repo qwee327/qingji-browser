@@ -203,7 +203,10 @@ class TabManager(private val appContext: Context) {
         tab.desktopMode || (settingsProvider?.invoke()?.desktopModeDefault ?: false)
 
     fun applySettings(settings: BrowserSettings, dark: Boolean) {
-        AdBlocker.enabled = settings.adBlockEnabled
+        AdBlocker.defaultLevel = settings.adBlockLevel
+        AdBlocker.strictBlocking = settings.strictBlocking
+        AdBlocker.builtinTrackerEnabled = settings.builtinTrackerRules
+        AdBlocker.builtinAdEnabled = settings.builtinAdRules
         tabs.forEach { tab ->
             tab.webView?.let { wv ->
                 wv.settings.javaScriptEnabled = settings.javaScriptEnabled
@@ -361,10 +364,33 @@ class TabManager(private val appContext: Context) {
         }
 
         override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
-            if (!request.isForMainFrame && AdBlocker.isAd(request.url?.toString())) {
+            val requestUrl = request.url?.toString()
+            if (request.isForMainFrame) {
+                // 严格阻止：主文档地址命中规则时拦截整个网页，展示提示页
+                if (AdBlocker.shouldBlockPage(requestUrl)) return strictBlockedPage()
+                return super.shouldInterceptRequest(view, request)
+            }
+            val pageUrl = view.url ?: tab.url
+            if (AdBlocker.shouldBlock(requestUrl, pageUrl)) {
                 return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(ByteArray(0)))
             }
             return super.shouldInterceptRequest(view, request)
+        }
+
+        private fun strictBlockedPage(): WebResourceResponse {
+            val html = """<!DOCTYPE html><html><head><meta charset="utf-8">""" +
+                """<meta name="viewport" content="width=device-width,initial-scale=1">""" +
+                """<title>网页已被拦截</title></head>""" +
+                """<body style="margin:0;min-height:100vh;display:flex;flex-direction:column;""" +
+                """align-items:center;justify-content:center;font-family:sans-serif;background:#fafafa;color:#222;">""" +
+                """<div style="font-size:18px;font-weight:600;">此网页已被拦截</div>""" +
+                """<div style="margin-top:10px;font-size:14px;color:#777;text-align:center;padding:0 32px;">""" +
+                """严格阻止模式已开启，该网页地址命中拦截规则。<br>可在「设置 - 拦截跟踪器和广告」中调整。</div>""" +
+                """</body></html>"""
+            return WebResourceResponse(
+                "text/html", "UTF-8",
+                ByteArrayInputStream(html.toByteArray(Charsets.UTF_8))
+            )
         }
 
         override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
