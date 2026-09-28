@@ -24,8 +24,14 @@ object AdBlocker {
     @Volatile
     var builtinAdEnabled: Boolean = true
 
-    private val builtinTrackers = HashSet<String>()
-    private val builtinAds = HashSet<String>()
+    // 规则集全部在后台线程构建完成后一次性原子发布（不可变集合），
+    // 之后所有线程只读。此前直接读写共享 HashSet：WebView 拦截线程与
+    // 规则加载线程并发访问会损坏 HashSet 内部结构，导致拦截判定时崩溃。
+    @Volatile
+    private var builtinTrackers: Set<String> = emptySet()
+
+    @Volatile
+    private var builtinAds: Set<String> = emptySet()
 
     @Volatile
     private var customTrackers: Set<String> = emptySet()
@@ -46,20 +52,23 @@ object AdBlocker {
         if (loaded) return
         loaded = true
         Thread {
-            loadAsset(context, "tracker_hosts.txt", builtinTrackers)
-            loadAsset(context, "ad_hosts.txt", builtinAds)
+            builtinTrackers = readAsset(context, "tracker_hosts.txt")
+            builtinAds = readAsset(context, "ad_hosts.txt")
         }.start()
     }
 
-    private fun loadAsset(context: Context, name: String, into: HashSet<String>) {
+    /** 在调用线程内完整读取规则文件并返回新集合；失败返回空集合（静默降级为不拦截） */
+    private fun readAsset(context: Context, name: String): Set<String> {
+        val result = HashSet<String>()
         try {
             context.assets.open(name).bufferedReader().forEachLine { line ->
                 val host = line.trim().lowercase()
-                if (host.isNotEmpty() && !host.startsWith("#")) into.add(host)
+                if (host.isNotEmpty() && !host.startsWith("#")) result.add(host)
             }
         } catch (e: Exception) {
             // 规则文件缺失时静默降级为不拦截
         }
+        return result
     }
 
     /** 由 Application 的数据库观察者调用，保持内存中自定义规则为最新 */
